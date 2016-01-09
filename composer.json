@@ -1,0 +1,34 @@
+{
+    "name": "sgomez/debug-swiftmailer-bundle",
+    "authors": [
+        {
+            "name": "Sergio Gómez",
+            "email": "sergio@uco.es"
+        }
+    ],
+    "description": "SwiftMailer Extension Bundle for debugging with Behat and Web Profiler",
+    "type": "library",
+    "license": "MIT",
+    "config": {
+        "bin-dir": "bin"
+    },
+    "autoload": {
+        "psr-4": { "Sgomez\\DebugSwiftMailerBundle\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Sgomez\\DebugSwiftMailerBundle\\spec\\": "spec/" }
+    },
+    "require": {
+        "php"                               : ">=5.5.9",
+        "behat/behat"                       : "~3.0",
+        "behat/symfony2-extension"          : "~2.1",
+        "phpunit/phpunit"                   : "~5.1",
+        "swiftmailer/swiftmailer"           : "~5.4",
+        "symfony/dependency-injection"      : "~2.8|~3.0",
+        "symfony/web-profiler-bundle"       : "~2.8|~3.0"
+    },
+    "require-dev": {
+        "phpspec/phpspec"                   : "^2.4",
+        "henrikbjorn/phpspec-code-coverage" : "^2.0"
+    }
+}

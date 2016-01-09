@@ -1,0 +1,153 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% import _self as helper %}
+
+{% block toolbar %}
+    {% if not collector.deliveryEnabled and collector.messageCount > 0 %}
+        {% set profiler_markup_version = profiler_markup_version|default(1) %}
+
+        {% set icon %}
+            {% set status = 'green' %}
+
+            {% set icon_fill_color = profiler_markup_version == 1 ? '#222' : '#AAA' %}
+            {% set icon_height = profiler_markup_version == 1 ? '26' : '24' %}
+            <span class="icon">{{ include('@SgomezDebugSwiftMailer/data_collector/spool.svg.twig', { fill_color: icon_fill_color, height: icon_height }) }}</span>
+            <span class="sf-toolbar-value">{{ collector.messageCount }}</span>
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Spooled messages</b>
+                <span class="sf-toolbar-status">{{ collector.messageCount }}</span>
+            </div>
+
+            {% for name in collector.mailers %}
+                <div class="sf-toolbar-info-piece">
+                    <b>{{ name }} mailer</b>
+                    <span class="sf-toolbar-status">{{ collector.messageCount(name)|default(0) }}</span>
+                </div>
+            {% endfor %}
+        {% endset %}
+
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 'link': true }) }}
+    {% endif %}
+{% endblock %}
+
+
+{% block menu %}
+    <span class="label status-{{ collector.messageCount == 0 ? 'disabled' }}">
+        <span class="icon">{{ include('@SgomezDebugSwiftMailer/data_collector/spool.svg.twig', { height: 32 }) }}</span>
+        <strong>SwiftMailer Spool</strong>
+        {% if collector.messageCount > 0 %}
+            <span class="count">
+                <span>{{ collector.messageCount }}</span>
+            </span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+
+    <style>
+        .sf-toggle-content.sf-toggle-visible {
+            display: table-row;
+        }
+    </style>
+{% endblock %}
+
+{% block panel %}
+    {% set profiler_markup_version = profiler_markup_version|default(1) %}
+
+    <h2>SwiftMailer Spooled E-mails</h2>
+
+    {% if collector.messageCount == 0 %}
+        <div class="empty">
+            <p>No e-mail messages spooled.</p>
+        </div>
+    {% else %}
+        <div class="sf-tabs">
+            {% for name in collector.mailers %}
+                <div class="tab">
+                    <h3 class="tab-title">{{ name }}<span class="badge">{{ collector.messageCount(name) }}</span></h3>
+                    <div class="tab-content">
+                        {% if collector.messages(name) is empty %}
+                            <div class="empty">
+                                <p>None of the used translation messages are defined for the given locale.</p>
+                            </div>
+                        {% else %}
+                            {{ helper.render_table(collector.messages(name)) }}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% macro render_table(messages) %}
+    <table>
+        <thead>
+        <tr>
+            <th>Subject</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for message in messages %}
+        <tr>
+            <td>{{ message.subject }}</td>
+            <td>{{ message.from | keys | first }}</td>
+            <td>{{ message.to | keys | first }}</td>
+            <td>
+                <button class="btn-link newline text-small sf-toggle" data-toggle-selector="#message-{{ loop.index }}" data-toggle-alt-content="Hide">Show</button>
+            </td>
+        </tr>
+        <tr id="message-{{ loop.index }}" class="hidden">
+            <td colspan="4">
+                {{ _self.render_message(message) }}
+            </td>
+        </tr>
+
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% macro render_message(message) %}
+    <div class="card">
+        <div class="card-block">
+            <span class="label">Message headers</span>
+                        <pre>{% for header in message.headers.all %}
+                            {{- header -}}
+                        {% endfor %}</pre>
+        </div>
+
+        <div class="card-block">
+            <span class="label">Message body</span>
+                        <pre>
+                            {%- if messagePart.charset is defined and message.charset %}
+                                {{- message.body|convert_encoding('UTF-8', message.charset) }}
+                            {%- else %}
+                                {{- message.body }}
+                            {%- endif -%}
+                        </pre>
+        </div>
+
+        {% for messagePart in message.children if messagePart.contentType in ['text/plain', 'text/html'] %}
+            <div class="card-block">
+                <span class="label">Alternative part ({{ messagePart.contentType }})</span>
+                            <pre>
+                                {%- if messagePart.charset %}
+                                    {{- messagePart.body|convert_encoding('UTF-8', messagePart.charset) }}
+                                {%- else %}
+                                    {{- messagePart.body }}
+                                {%- endif -%}
+                            </pre>
+            </div>
+        {% endfor %}
+    </div>
+{% endmacro %}
